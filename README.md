@@ -40,3 +40,9 @@ DATASET_SIZE: 数据规模
 * MLP
 
 其中 MLP 的速度相对较慢。
+
+使用 optionparser 处理传入的参数
+
+```python
+parser.add_option("-c", "--class", default="lgr", help="choose a classifier among lgr, nb, sgd, dct and mlp", action="store", type="string", dest="clf")
+```

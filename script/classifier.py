@@ -28,44 +28,60 @@ parser.add_option("-c", "--class", default="lgr", help="choose a classifier amon
 
 (options, args) = parser.parse_args()
 
+# Classifiers
 
+clf = None
+
+# Logistic regression
+lgr_clf = Pipeline([('clf', LogisticRegression(penalty='l2', 
+    dual=False, tol=1e-4, C=1.0, fit_intercept=True, intercept_scaling=1, 
+    class_weight=None, random_state=None, max_iter=100, multi_class='ovr', 
+    verbose=0, warm_start=True, n_jobs=1))])
+
+# Naive bayes
+nb_clf = MultinomialNB()
+
+# SVM
+sgd_clf = Pipeline([('clf', SGDClassifier(loss='hinge', penalty='l2',
+                        alpha=1e-3, n_iter=5, random_state=42)),])
+
+# Decision tree
+dct_clf = DecisionTreeClassifier(criterion="gini", splitter="best", 
+    max_depth=None, min_samples_split=2, min_samples_leaf=1, 
+    min_weight_fraction_leaf=0., max_features=None, random_state=None, 
+    max_leaf_nodes=None, min_impurity_split=1e-7, class_weight=None, 
+    presort=False)
+
+# MLP
+mlp_clf = MLPClassifier(hidden_layer_sizes=(128,), 
+    activation="relu", solver='adam', alpha=0.0001, 
+    batch_size='auto', learning_rate="constant", 
+    learning_rate_init=0.001, power_t=0.5, 
+    max_iter=200, shuffle=True, random_state=None, 
+    tol=1e-4, verbose=False, warm_start=False, 
+    momentum=0.9, nesterovs_momentum=True, early_stopping=False, 
+    validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
+
+if options.clf == 'lgr':
+    clf = lgr_clf
+elif options.clf == 'nb':
+    clf = nb_clf
+elif options.clf == 'sgd':
+    clf = sgd_clf
+elif options.clf == 'dct':
+    clf = dct_clf
+elif options.clf == 'mlp':
+    clf = mlp_clf
+else:
+    clf = lgr_clf # default classifier
+
+print 'Using', options.clf, 'classifier'
 
 def evaluate(x_train_tfidf, target, target_names):
     print 'Data size:', len(target)
     kf = KFold(n_splits=10, shuffle=False)
     x = x_train_tfidf
     y = np.array(target)
-
-    # Classifiers
-    # Logistic regression
-    lgr_clf = Pipeline([('clf', LogisticRegression(penalty='l2', 
-        dual=False, tol=1e-4, C=1.0, fit_intercept=True, intercept_scaling=1, 
-        class_weight=None, random_state=None, max_iter=100, multi_class='ovr', 
-        verbose=0, warm_start=True, n_jobs=1))])
-    
-    # Naive bayes
-    nb_clf = MultinomialNB()
-
-    # SVM
-    sgd_clf = Pipeline([('clf', SGDClassifier(loss='hinge', penalty='l2',
-                         alpha=1e-3, n_iter=5, random_state=42)),])
-
-    # Decision tree
-    dct_clf = DecisionTreeClassifier(criterion="gini", splitter="best", 
-        max_depth=None, min_samples_split=2, min_samples_leaf=1, 
-        min_weight_fraction_leaf=0., max_features=None, random_state=None, 
-        max_leaf_nodes=None, min_impurity_split=1e-7, class_weight=None, 
-        presort=False)
-
-    # MLP
-    mlp_clf = MLPClassifier(hidden_layer_sizes=(128,), 
-        activation="relu", solver='adam', alpha=0.0001, 
-        batch_size='auto', learning_rate="constant", 
-        learning_rate_init=0.001, power_t=0.5, 
-        max_iter=200, shuffle=True, random_state=None, 
-        tol=1e-4, verbose=False, warm_start=False, 
-        momentum=0.9, nesterovs_momentum=True, early_stopping=False, 
-        validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
 
     training_iter = 0
     acc_list = []
@@ -84,8 +100,8 @@ def evaluate(x_train_tfidf, target, target_names):
         # predicted = nb_clf.predict(x_test)
         
         # SVM
-        sgd_clf.fit(x_train, y_train)
-        predicted = sgd_clf.predict(x_test)
+        clf.fit(x_train, y_train)
+        predicted = clf.predict(x_test)
 
         # Desicion Tree
         # dct_clf.fit(x_train, y_train)
