@@ -3,6 +3,8 @@
 from const import *
 from preprocess import load_data
 
+import pickle
+
 import numpy as np
 from sklearn.model_selection import cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
@@ -12,6 +14,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.tree import DecisionTreeClassifier
+
+from xgboost import XGBClassifier
 
 from optparse import OptionParser
 parser = OptionParser()
@@ -24,7 +28,7 @@ parser.add_option("-s", "--size", default=1000, help="config the data set size",
 
 (options, args) = parser.parse_args()
 
-if options.size != 1000:
+if options.size != DATASET_SIZE:
     dataset_size = options.size
 else:
     dataset_size = DATASET_SIZE
@@ -32,17 +36,18 @@ else:
 bag_clf = BaggingClassifier( KNeighborsClassifier(), 
     max_samples=0.5, max_features=0.5)
 
-ada_clf = AdaBoostClassifier(n_estimators=50)
+ada_clf = AdaBoostClassifier(n_estimators=5)
 
-rdf_clf = RandomForestClassifier(n_estimators=10, criterion="gini", 
+rdf_clf = RandomForestClassifier(n_estimators=5, criterion="gini", 
     max_depth=None, min_samples_split=2, min_samples_leaf=1, 
     min_weight_fraction_leaf=0., max_features="auto", 
     max_leaf_nodes=None, min_impurity_split=1e-7, bootstrap=True, 
     oob_score=False, n_jobs=1,random_state=None,verbose=0, 
     warm_start=False, class_weight=None)
 
-grd_clf = GradientBoostingClassifier(n_estimators=50, 
-    learning_rate=0.1, max_depth=1, random_state=0)
+# grd_clf = GradientBoostingClassifier(n_estimators=10, 
+#     learning_rate=0.1, max_depth=1, random_state=0)
+grd_clf = XGBClassifier()
 
 clf = None
 if options.ensemble == 'bag':
@@ -69,6 +74,11 @@ def ensemble(x_train_tfidf, target, target_names):
         x_test = x[:100]
         y_test = y[:100]
         print clf.score(x_test, y_test)
+    elif options.ensemble == 'grd':
+        # if os.path.exists():
+            
+        clf.fit(x, y)
+        pickle.dump(clf, open('xgb.pkl', 'wb'))
     else:
         scores = cross_val_score(clf, x, y)
         print scores.mean()
