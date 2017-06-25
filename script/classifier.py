@@ -16,17 +16,21 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neural_network import MLPClassifier
 
-# ensemble
-from sklearn.ensemble import RandomForestClassifier
-import xgboost as xgb
-
 from optparse import OptionParser
 parser = OptionParser()
 
 parser.add_option("-c", "--class", default="lgr", help="choose a classifier among lgr, nb, sgd, dct and mlp",
                   action="store", type="string", dest="clf")
 
+parser.add_option("-s", "--size", default=1000, help="config the data set size",
+                    action="store", type="int", dest="size")
+
 (options, args) = parser.parse_args()
+
+if options.size != DATASET_SIZE:
+    dataset_size = options.size
+else:
+    dataset_size = DATASET_SIZE
 
 # Classifiers
 
@@ -120,8 +124,11 @@ def evaluate(x_train_tfidf, target, target_names):
 
 
 def main():
+    global dataset_size
     (x_train_tfidf, target, target_names) = load_data()
-    evaluate(x_train_tfidf[0:DATASET_SIZE], target[0:DATASET_SIZE], target_names[0:DATASET_SIZE])    
+    dataset_size = min(len(target), dataset_size)
+    print 'Data set size:', dataset_size
+    evaluate(x_train_tfidf[0:dataset_size], target[0:dataset_size], target_names[0:dataset_size])
     
 
 if __name__ == '__main__':

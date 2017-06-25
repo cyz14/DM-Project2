@@ -30,6 +30,7 @@ def getTextEntry(soup, file_name):
         extra_num += 1
         fname = os.path.basename(file_name)
         print fname
+        # move invalid file to trash_dir
         shutil.move(file_name, os.path.join(trash_dir, fname))
         return None, None, None
     
@@ -49,6 +50,7 @@ def getTextEntry(soup, file_name):
         extra_num += 1
         print file_name
         fname = os.path.basename(file_name)
+        # move invalid file to trash_dir
         shutil.move(file_name, os.path.join(trash_dir, fname))
         return None, None, None
 
@@ -68,8 +70,6 @@ def preprocess():
     target = []
 
     for index, file_name in enumerate(file_names):
-        if index > DATASET_SIZE:
-            break
         file = codecs.open(file_name, encoding="utf-8").read()
         soup = BeautifulSoup(file, 'xml')
         full_text, dttime, topic = getTextEntry(soup, file_name)
@@ -82,7 +82,7 @@ def preprocess():
         if index % 1000 == 0:
             print index, 'processed.'
 
-    print extra_num
+    print extra_num, 'files invalid and removed'
     return corpus, target, target_names
 
 
@@ -112,16 +112,23 @@ def load_data(filename=None):
         pickle.dump(data, fw)
         fw.close()
     else:
-        fr = open(tfidf_filename, 'rb')
-        (x_train_tfidf, target, target_names) = pickle.load(fr)
-        fr.close()
+        reload = raw_input('tfidf.pkl already exists, load [y]/n ? confirm: ').lower()
+        if len(reload) == 0 or reload[0] == 'y':
+            fr = open(tfidf_filename, 'rb')
+            (x_train_tfidf, target, target_names) = pickle.load(fr)
+            fr.close()
+        else:
+            print 'Please remove tfidf.pkl if you do not want to reload'
+            return None
 
     return (x_train_tfidf, target, target_names)
 
 
 def main():
-    (x_train_tfidf, target, target_names) = load_data()
-    print len(target)
+    dataset = load_data()
+    if dataset != None:
+        (x_train_tfidf, target, target_names) = dataset
+        print len(target)
 
 
 if __name__ == '__main__':
