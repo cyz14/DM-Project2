@@ -11,6 +11,7 @@ from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import adjusted_mutual_info_score
 from sklearn.metrics import normalized_mutual_info_score
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 
 from optparse import OptionParser
 parser = OptionParser()
@@ -34,11 +35,13 @@ kms_cluster = KMeans(n_clusters=n_of_clusters, init='k-means++', n_init=5,
     max_iter=300, tol=0.0001, precompute_distances='auto', verbose=1,
     random_state=None, copy_x=True, n_jobs=1, algorithm='auto')
 
-dbs_cluster = DBSCAN(eps=0.5, min_samples=5, metric='euclidean',
+dbs_cluster = DBSCAN(eps=0.1, min_samples=5, metric='euclidean',
     algorithm='auto', leaf_size=30, p=None, n_jobs=1)
 
 colors = np.array([x for x in 'bgrcmykbgrcmyk'])
-tsne = TSNE(n_components = 2, learning_rate = 100.0, method = "exact")
+colors = colors
+pca = PCA(n_components = 10)
+tsne = TSNE(n_components = 2)
 
 cluster = None
 if options.cluster == 'dbs':
@@ -55,24 +58,25 @@ def clustering(x_train_tfidf, target, target_names):
     x = x_train_tfidf.toarray()
     y = np.array(target)
 
+    # Dim reduct
+    print 'PCA begin...'
+    pcaData = pca.fit_transform(x)
+    print 'PCA ends!'
+
     t0 = time.time()
-    result = cluster.fit(x)
+    result = cluster.fit(pcaData)
     t1 = time.time()
     print '# NMI is: ', normalized_mutual_info_score(y, result.labels_)
     print '# AMI is: ', adjusted_mutual_info_score(y, result.labels_)
 
     # Dim reduct
-    tsneData = tsne.fit_transform(x)
+    print 'TSNE begin...'
+    tsneData = tsne.fit_transform(pcaData)
+    print 'TSNE ends!'
 
     # plot
     plt.scatter(tsneData[:, 0], tsneData[:, 1], color=colors[result.labels_].tolist(), s=10)
 
-    # if hasattr(result, 'cluster_centers_'):
-    #     centers = result.cluster_centers_
-    #     center_colors = colors[:len(centers)]
-    #     plt.scatter(centers[:, 0], centers[:, 1], s=100, c=center_colors)
-    plt.xlim(-2, 2)
-    plt.ylim(-2, 2)
     plt.xticks(())
     plt.yticks(())
     plt.text(.99, .01, ('%.2fs' % (t1 - t0)).lstrip('0'),
