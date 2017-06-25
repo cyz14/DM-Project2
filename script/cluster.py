@@ -1,16 +1,16 @@
 #!/usr/bin/env python
+import time
 
 from const import *
 from preprocess import load_data
 
-import os
-import pickle
-
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import cross_val_score
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import adjusted_mutual_info_score
 from sklearn.metrics import normalized_mutual_info_score
+from sklearn.manifold import TSNE
 
 from optparse import OptionParser
 parser = OptionParser()
@@ -28,71 +28,64 @@ if options.size != DATASET_SIZE:
 else:
     dataset_size = DATASET_SIZE
 
-bag_clf = BaggingClassifier( KNeighborsClassifier(),
-    max_samples=0.5, max_features=0.5)
+n_of_clusters = 10
 
-ada_clf = AdaBoostClassifier(n_estimators=5)
+kms_cluster = KMeans(n_clusters=n_of_clusters, init='k-means++', n_init=5,
+    max_iter=300, tol=0.0001, precompute_distances='auto', verbose=1,
+    random_state=None, copy_x=True, n_jobs=1, algorithm='auto')
 
-rdf_clf = RandomForestClassifier(n_estimators=5, criterion="gini",
-    max_depth=None, min_samples_split=2, min_samples_leaf=1,
-    min_weight_fraction_leaf=0., max_features="auto",
-    max_leaf_nodes=None, min_impurity_split=1e-7, bootstrap=True,
-    oob_score=False, n_jobs=1,random_state=None,verbose=0,
-    warm_start=False, class_weight=None)
+dbs_cluster = DBSCAN(eps=0.5, min_samples=5, metric='euclidean',
+    algorithm='auto', leaf_size=30, p=None, n_jobs=1)
 
-# grd_clf = GradientBoostingClassifier(n_estimators=10,
-#     learning_rate=0.1, max_depth=1, random_state=0)
-grd_clf = XGBClassifier()
+colors = np.array([x for x in 'bgrcmykbgrcmyk'])
+tsne = TSNE(n_components = 2, learning_rate = 100.0, method = "exact")
 
-grd_filename = 'grd.pkl'
-
-clf = None
-if options.ensemble == 'bag':
-    clf = bag_clf
-elif options.ensemble == 'ada':
-    clf = ada_clf
-elif options.ensemble == 'rdf':
-    clf = rdf_clf
-elif options.ensemble == 'grd':
-    clf = grd_clf
+cluster = None
+if options.cluster == 'dbs':
+    cluster = dbs_cluster
 else: # default choice
-    clf = ada_clf
+    cluster = kms_cluster
 
-print 'Using', options.ensemble, ' method'
+print 'Using', options.cluster, ' method'
 
-def ensemble(x_train_tfidf, target, target_names):
-    global clf
+def clustering(x_train_tfidf, target, target_names):
+    global cluster
     print 'Data size:', len(target)
     # kf = KFold(n_splits=10, shuffle=False)
     x = x_train_tfidf.toarray()
     y = np.array(target)
 
-    if options.ensemble == 'grd':
-        if os.path.exists(grd_filename):
-            confirm = raw_input('grd file already exists, load? [y]/n confirm: ').lower()
-            if len(confirm) == 0 or confirm[0] == 'y':
-                clf = pickle.load(open(grd_filename, 'rb'))
-            else:
-                print 'Please remove grd pkl file if you want to retrain, but it may be time-consuming.'
-                return
-        else:
-            clf.fit(x, y)
-            pickle.dump(clf, open(grd_filename, 'wb'))
-        # test grd
-        x_test = x[100:200]
-        y_test = y[100:200]
-        print clf.score(x_test, y_test)
-    else:
-        scores = cross_val_score(clf, x, y)
-        print scores.mean()
+    t0 = time.time()
+    result = cluster.fit(x)
+    t1 = time.time()
+    print '# NMI is: ', normalized_mutual_info_score(y, result.labels_)
+    print '# AMI is: ', adjusted_mutual_info_score(y, result.labels_)
 
+    # Dim reduct
+    tsneData = tsne.fit_transform(x)
+
+    # plot
+    plt.scatter(tsneData[:, 0], tsneData[:, 1], color=colors[result.labels_].tolist(), s=10)
+
+    # if hasattr(result, 'cluster_centers_'):
+    #     centers = result.cluster_centers_
+    #     center_colors = colors[:len(centers)]
+    #     plt.scatter(centers[:, 0], centers[:, 1], s=100, c=center_colors)
+    plt.xlim(-2, 2)
+    plt.ylim(-2, 2)
+    plt.xticks(())
+    plt.yticks(())
+    plt.text(.99, .01, ('%.2fs' % (t1 - t0)).lstrip('0'),
+             transform=plt.gca().transAxes, size=15,
+             horizontalalignment='right')
+    plt.show()
 
 def main():
     global dataset_size
     (x_train_tfidf, target, target_names) = load_data()
     dataset_size = min(len(target), dataset_size)
     print 'Data set size:', dataset_size
-    ensemble(x_train_tfidf[:dataset_size], target[:dataset_size], target_names[:dataset_size])
+    clustering(x_train_tfidf[:dataset_size], target[:dataset_size], target_names[:dataset_size])
 
 
 if __name__ == '__main__':
