@@ -39,6 +39,8 @@ parser.add_option("-c", "--class", default="lgr", help="choose a classifier amon
 
 运行不同的分类器需要指定对应名字
 
+重要：载入data需要按Enter键确认
+
 ```sh
 # Logistic Regression
 python classifier.py -c lgr

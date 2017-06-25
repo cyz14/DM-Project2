@@ -4,6 +4,8 @@
 
 高童 	2014011357
 
+https://github.com/cyz14/DM-Project2
+
 ## 一、数据预处理与特征提取
 
 语料库的路径 corpus_dir 在 const.py 中指定。
