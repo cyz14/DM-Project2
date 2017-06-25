@@ -53,6 +53,15 @@ Bootstrap 自助法是一种选取思想。在 Random Forest Classifier 中有 b
 
 ## 组内分工情况
 
+本次实验分工为：
+
+高童负责
+    二、基本分类器运用和比较
+    四、聚类算法运用和比较，
+
+陈雅正负责
+    框架搭建和一、三等其余部分。
+
 ## 遇到的问题及解决
 
 Gradient Boosting Classifier sparse matrix issue using scikit-learn
