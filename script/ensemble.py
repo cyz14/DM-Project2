@@ -3,6 +3,7 @@
 from const import *
 from preprocess import load_data
 
+import os
 import pickle
 
 import numpy as np
@@ -49,6 +50,8 @@ rdf_clf = RandomForestClassifier(n_estimators=5, criterion="gini",
 #     learning_rate=0.1, max_depth=1, random_state=0)
 grd_clf = XGBClassifier()
 
+grd_filename = 'grd.pkl'
+
 clf = None
 if options.ensemble == 'bag':
     clf = bag_clf
@@ -64,21 +67,27 @@ else: # default choice
 print 'Using', options.ensemble, ' method'
 
 def ensemble(x_train_tfidf, target, target_names):
+    global clf
     print 'Data size:', len(target)
     # kf = KFold(n_splits=10, shuffle=False)
     x = x_train_tfidf.toarray()
     y = np.array(target)
 
     if options.ensemble == 'grd':
-        clf.fit(x, y)
-        x_test = x[:100]
-        y_test = y[:100]
+        if os.path.exists(grd_filename):
+            confirm = raw_input('grd file already exists, load? [y]/n confirm: ').lower()
+            if len(confirm) == 0 or confirm[0] == 'y':
+                clf = pickle.load(open(grd_filename, 'rb'))
+            else:
+                print 'Please remove grd pkl file if you want to retrain, but it may be time-consuming.'
+                return
+        else:
+            clf.fit(x, y)
+            pickle.dump(clf, open(grd_filename, 'wb'))
+        # test grd
+        x_test = x[100:200]
+        y_test = y[100:200]
         print clf.score(x_test, y_test)
-    elif options.ensemble == 'grd':
-        # if os.path.exists():
-            
-        clf.fit(x, y)
-        pickle.dump(clf, open('xgb.pkl', 'wb'))
     else:
         scores = cross_val_score(clf, x, y)
         print scores.mean()
