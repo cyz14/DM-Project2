@@ -1,10 +1,15 @@
 # DM-Project 2
 
+Chen Yazheng
+
+Gao Tong
+
 ## Dependency Packages
 
 * numpy
-* BeautifulSoup
-* sklearn
+* beautifulsoup4
+* scikit-learn
+* xgboost
 
 ## Project Structure
 
