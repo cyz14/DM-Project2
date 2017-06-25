@@ -36,6 +36,19 @@ TFIDF 矩阵的计算使用 sklearn.feature_extraction.text 的 TfidfTransformer
 
 ## 三、ensemble 算法运用与比较
 
+采用以下 ensemble 算法，KFold 进行十折交叉验证。数据集大小使用的是 30000。以下时间均在同一台计算机上进行计算。
+
+Bootstrap 自助法是一种选取思想。在 Random Forest Classifier 中有 bootstrap 开启选项。
+
+| 分类算法          | Precision | Recall | F1-measure | Time   |
+| ------------- | --------- | ------ | ---------- | ------ |
+| Bagging       | 40.7%     | 14.2%  | 14.6%      | 4m37s  |
+| AdaBoost      | 17.2%     | 25.9%  | 14.9%      | 2m54s  |
+| Random Forest | 43.4%     | 45.3%  | 40.0%      | 6m24s  |
+| Gradient Boost| 92.2%     | 92.2%  | 93.0%      |too long|
+
+注：GradientBoost 在使用 sklearn 的实现的时候速度实在太慢，调整了 n_estimators=10 还是太慢，于是就只用了大小为 1000 的测试集来训练和测试，需要训练 40 分钟左右。因此我们将训练的结果用 pickle 存下，再次测试可以直接 load 训练好的模型。在 1000 的数据集里用 100 的测试集测试10次的平均正确率是 92% 左右。
+
 ## 四、聚类算法运用与比较
 
 ## 组内分工情况

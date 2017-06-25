@@ -7,7 +7,9 @@ import os
 import pickle
 
 import numpy as np
+from sklearn import metrics
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import BaggingClassifier
@@ -69,10 +71,11 @@ print 'Using', options.ensemble, ' method'
 def ensemble(x_train_tfidf, target, target_names):
     global clf
     print 'Data size:', len(target)
-    # kf = KFold(n_splits=10, shuffle=False)
+    kf = KFold(n_splits=10, shuffle=False)
     x = x_train_tfidf.toarray()
     y = np.array(target)
 
+    # if using GradientBoost
     if options.ensemble == 'grd':
         if os.path.exists(grd_filename):
             confirm = raw_input('grd file already exists, load? [y]/n confirm: ').lower()
@@ -85,12 +88,50 @@ def ensemble(x_train_tfidf, target, target_names):
             clf.fit(x, y)
             pickle.dump(clf, open(grd_filename, 'wb'))
         # test grd
-        x_test = x[100:200]
-        y_test = y[100:200]
-        print clf.score(x_test, y_test)
-    else:
-        scores = cross_val_score(clf, x, y)
-        print scores.mean()
+        training_iter = 0
+        plist = []
+        rlist = []
+        flist = []
+        for i in range(10):
+            x_test = x[i*100: i*100+100]
+            y_test = y[i*100: i*100+100]
+            predicted = clf.predict(x_test)
+            print(metrics.classification_report(y_test, predicted,
+                target_names=target_names))
+            p, r, f, s = metrics.precision_recall_fscore_support(y_test, predicted,
+                average='weighted')
+            plist.append(p)
+            rlist.append(r)
+            flist.append(f)
+        print '# Total avg precision is:', np.mean(plist)
+        print '# Total avg recall is:', np.mean(rlist)
+        print '# Total avg f-score is:', np.mean(flist)
+        return
+
+    training_iter = 0
+    plist = []
+    rlist = []
+    flist = []
+    for train_index, test_index in kf.split(x):
+        print 'Training iter:', training_iter
+        training_iter += 1
+        x_train, x_test = x_train_tfidf[train_index], x_train_tfidf[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        
+        clf.fit(x_train, y_train)
+        predicted = clf.predict(x_test)
+        
+        print(metrics.classification_report(y_test, predicted,
+            target_names=target_names))
+        p, r, f, s = metrics.precision_recall_fscore_support(y_test, predicted,
+            average='weighted')
+        plist.append(p)
+        rlist.append(r)
+        flist.append(f)
+
+    print '# Total avg precision is:', np.mean(plist)
+    print '# Total avg recall is:', np.mean(rlist)
+    print '# Total avg f-score is:', np.mean(flist)
     
 
 def main():
