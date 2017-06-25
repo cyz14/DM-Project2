@@ -58,9 +58,9 @@ Bootstrap 自助法是一种选取思想。在 Random Forest Classifier 中有 b
 | 聚类算法   | NMI   | AMI   | Time  |
 | ------ | ----- | ----- | ----- |
 | KMeans | 0.192 | 0.136 | 2m45s |
-| DBSCAN |       |       |       |
+| DBSCAN | 0.146 | 0.045 | 2m26s |
 
-作出的聚类图像位于result文件夹下。
+作出的聚类图像位于result文件夹下。从数据可以看出，类与类间区分不明显，不适合采用DBSCAN。
 
 ## 组内分工情况
 
