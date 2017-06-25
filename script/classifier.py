@@ -88,7 +88,9 @@ def evaluate(x_train_tfidf, target, target_names):
     y = np.array(target)
 
     training_iter = 0
-    acc_list = []
+    plist = []
+    rlist = []
+    flist = []
     for train_index, test_index in kf.split(x):
         print 'Training iter:', training_iter
         training_iter += 1
@@ -115,12 +117,17 @@ def evaluate(x_train_tfidf, target, target_names):
         # mlp_clf.fit(x_train, y_train)
         # predicted = mlp_clf.predict(x_test)
 
-        acc_list.append(np.mean(predicted == y_test))
         print(metrics.classification_report(y_test, predicted,
             target_names=target_names))
-        print acc_list[-1]
+        p, r, f, s = metrics.precision_recall_fscore_support(y_test, predicted,
+            average='weighted')
+        plist.append(p)
+        rlist.append(r)
+        flist.append(f)
 
-    print '# Total avg acc rate is:', np.mean(acc_list) * 100, '%'
+    print '# Total avg precision is:', np.mean(plist)
+    print '# Total avg recall is:', np.mean(rlist)
+    print '# Total avg f-score is:', np.mean(flist)
 
 
 def main():
